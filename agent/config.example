@@ -1,0 +1,13 @@
+# /etc/ddns-agent/config (chmod 600, owned by root) — sourced by ddns-agent.sh
+# Or per-user: $HOME/.config/ddns-agent/config
+
+# Required
+WORKER_URL="https://nodeget.example.com/nodeget/worker-route/ddns"
+SHARED_SECRET="paste-the-same-secret-as-the-worker"
+
+# Optional
+IP_FAMILY=4              # 4 or 6
+FORCE=0                  # 1 = always POST even if local cache matches
+CURL_TIMEOUT=10          # seconds
+# STATE_FILE=/var/lib/ddns-agent/last_ip_v4
+# IP_PROVIDERS="https://www.cloudflare.com/cdn-cgi/trace https://api.ipify.org"

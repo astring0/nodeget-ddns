@@ -1,0 +1,86 @@
+{
+  "_comment_purpose": "FALLBACK MODE — only use when blocking-task path can't be relied upon (intermittent agent connectivity, very long network round-trips that exceed worker's 30s execution limit when summed across mappings, or for whatever reason you don't want the worker to actively poke the agent on every tick). Uses N agent crons (one per agent uuid, distinct names) + 1 server cron that reads crontab_result via cron_name_fetch_ip in env.MAPPINGS. The recommended path is `nodeget-cron.example.json` — single server cron + agent_uuid directly in MAPPINGS.",
+  "_comment_substitute": "Replace placeholders: NODEGET_API_TOKEN, AGENT_UUID_HOME, AGENT_UUID_NAS, WORKER_NAME.",
+  "_comment_ref": "crontab: https://nodeget.com/api/crontab/crud.html · task: https://nodeget.com/api/task/index.html · result: https://nodeget.com/api/crontab_result/crud.html",
+  "_comment_cron_format": "6-segment: sec min hr day mon weekday. Agent ip crons fire at :00, server worker cron at :30 so the agent results land before the server reads them.",
+
+  "agent_ip_cron_home": {
+    "jsonrpc": "2.0", "id": 1,
+    "method": "crontab_create",
+    "params": {
+      "token": "NODEGET_API_TOKEN",
+      "name": "ddns-fetch-home",
+      "cron_expression": "0 */5 * * * *",
+      "cron_type": {
+        "agent": [
+          ["AGENT_UUID_HOME"],
+          { "task": { "ip": null } }
+        ]
+      }
+    }
+  },
+
+  "agent_ip_cron_nas": {
+    "jsonrpc": "2.0", "id": 2,
+    "method": "crontab_create",
+    "params": {
+      "token": "NODEGET_API_TOKEN",
+      "name": "ddns-fetch-nas",
+      "cron_expression": "0 */5 * * * *",
+      "cron_type": {
+        "agent": [
+          ["AGENT_UUID_NAS"],
+          { "task": { "ip": null } }
+        ]
+      }
+    }
+  },
+
+  "server_worker_cron_all": {
+    "_comment": "One server cron iterates over every mapping in env.MAPPINGS. js_worker[1] is the `params` arg to onCron — leave {} for normal scheduled sync.",
+    "jsonrpc": "2.0", "id": 3,
+    "method": "crontab_create",
+    "params": {
+      "token": "NODEGET_API_TOKEN",
+      "name": "ddns-cf-sync-all",
+      "cron_expression": "30 */5 * * * *",
+      "cron_type": {
+        "server": {
+          "js_worker": ["WORKER_NAME", {}]
+        }
+      }
+    }
+  },
+
+  "_optional_only_one_mapping": {
+    "_comment": "Want a separate cadence for one mapping (e.g. NAS sync less often)? Drop the all-cron above and run per-mapping server crons with `only`:",
+    "jsonrpc": "2.0", "id": 4,
+    "method": "crontab_create",
+    "params": {
+      "token": "NODEGET_API_TOKEN",
+      "name": "ddns-cf-sync-nas",
+      "cron_expression": "30 */15 * * * *",
+      "cron_type": {
+        "server": {
+          "js_worker": ["WORKER_NAME", { "only": "nas" }]
+        }
+      }
+    }
+  },
+
+  "_optional_daily_force": {
+    "_comment": "Once a day at 03:00, force a re-push for all mappings (catches silent CF dashboard edits faster than the in-worker HEARTBEAT_HOURS path).",
+    "jsonrpc": "2.0", "id": 5,
+    "method": "crontab_create",
+    "params": {
+      "token": "NODEGET_API_TOKEN",
+      "name": "ddns-cf-daily-force",
+      "cron_expression": "0 0 3 * * *",
+      "cron_type": {
+        "server": {
+          "js_worker": ["WORKER_NAME", { "force": true }]
+        }
+      }
+    }
+  }
+}

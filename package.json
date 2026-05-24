@@ -1,0 +1,38 @@
+{
+  "name": "nodeget-cloudflare-ddns",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare DDNS bridge running on the NodeGet js-worker (QuickJS) platform. Server-side cron dispatches an ad-hoc task to the home agent, parses its public IP, and PATCHes the Cloudflare DNS record.",
+  "keywords": [
+    "ddns",
+    "cloudflare",
+    "nodeget",
+    "js-worker",
+    "quickjs",
+    "dynamic-dns"
+  ],
+  "license": "MIT",
+  "author": "astring0 <27602232+astring0@users.noreply.github.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/astring0/nodeget-ddns.git"
+  },
+  "homepage": "https://github.com/astring0/nodeget-ddns#readme",
+  "bugs": {
+    "url": "https://github.com/astring0/nodeget-ddns/issues"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "build:watch": "node build.mjs --watch",
+    "deploy:print": "node build.mjs && node -e \"import('fs').then(fs => process.stdout.write(fs.readFileSync('dist/worker.js','utf8').length + ' bytes built; base64 of dist/worker.js:\\n' + Buffer.from(fs.readFileSync('dist/worker.js')).toString('base64') + '\\n'))\""
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
