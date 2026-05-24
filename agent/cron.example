@@ -1,5 +1,0 @@
-# cron alternative for systems without systemd (OpenWrt, busybox, macOS launchd users)
-# crontab -e -u root  (or as the user that owns the state dir)
-
-# Every 5 minutes
-*/5 * * * * /usr/local/bin/ddns-agent.sh >/dev/null 2>&1

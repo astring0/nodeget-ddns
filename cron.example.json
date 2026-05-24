@@ -1,0 +1,80 @@
+{
+  "_comment": "Register one server cron to drive the worker. Cron expression is 6-segment: sec min hr day mon weekday. js_worker[1] is the params object passed to onCron — empty {} for normal scheduled sync.",
+  "_ref": "https://nodeget.com/api/crontab/crud.html",
+
+  "server_cron": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "crontab_create",
+    "params": {
+      "token": "NODEGET_API_TOKEN",
+      "name": "ddns-cf-sync",
+      "cron_expression": "0 */5 * * * *",
+      "cron_type": {
+        "server": {
+          "js_worker": ["WORKER_NAME", {}]
+        }
+      }
+    }
+  },
+
+  "_optional_daily_force": {
+    "_comment": "Once a day, force re-push regardless of KV cache. Defends against silent edits on the Cloudflare dashboard.",
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "crontab_create",
+    "params": {
+      "token": "NODEGET_API_TOKEN",
+      "name": "ddns-cf-daily-force",
+      "cron_expression": "0 0 3 * * *",
+      "cron_type": {
+        "server": {
+          "js_worker": ["WORKER_NAME", { "force": true }]
+        }
+      }
+    }
+  },
+
+  "_optional_per_mapping_schedule": {
+    "_comment": "Run a single mapping on a different cadence. Add a separate server cron with params.only.",
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "crontab_create",
+    "params": {
+      "token": "NODEGET_API_TOKEN",
+      "name": "ddns-cf-sync-nas",
+      "cron_expression": "0 */15 * * * *",
+      "cron_type": {
+        "server": {
+          "js_worker": ["WORKER_NAME", { "only": "nas" }]
+        }
+      }
+    }
+  },
+
+  "_optional_mappings_in_params": {
+    "_comment": "Pass MAPPINGS via cron params instead of env. Useful for multi-tenant or per-cron config groups. Never embed CF_API_TOKEN / NODEGET_API_TOKEN here — they belong in env only.",
+    "jsonrpc": "2.0",
+    "id": 4,
+    "method": "crontab_create",
+    "params": {
+      "token": "NODEGET_API_TOKEN",
+      "name": "ddns-cf-sync-tenant-a",
+      "cron_expression": "0 */5 * * * *",
+      "cron_type": {
+        "server": {
+          "js_worker": ["WORKER_NAME", {
+            "mappings": [
+              {
+                "name": "tenant-a-home",
+                "agent_uuid": "00000000-0000-0000-0000-cccccccccccc",
+                "record_v4": "home-a.example.com",
+                "family": "v4"
+              }
+            ]
+          }]
+        }
+      }
+    }
+  }
+}
