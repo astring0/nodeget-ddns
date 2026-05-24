@@ -127,7 +127,7 @@ function checkGlobalEnv(cfg) {
   const miss = [];
   if (!cfg.cfToken) miss.push("CF_API_TOKEN");
   if (!cfg.ngToken) miss.push("NODEGET_API_TOKEN");
-  if (!cfg.mappings.length) miss.push("MAPPINGS (or legacy CF_RECORD_NAME + AGENT_UUID)");
+  if (!cfg.mappings.length) miss.push("mappings (pass in cron params, or set env.MAPPINGS, or use legacy AGENT_UUID + CF_RECORD_NAME)");
   return miss;
 }
 

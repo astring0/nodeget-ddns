@@ -1,18 +1,25 @@
 {
-  "_comment": "Register one server cron to drive the worker. Cron expression is 6-segment: sec min hr day mon weekday. js_worker[1] is the params object passed to onCron — empty {} for normal scheduled sync.",
+  "_comment": "Register one server cron via the NodeGet dashboard: 定时任务 → 创建定时任务. Paste the `params` block below. Cron expression is 6-segment: sec min hr day mon weekday.",
   "_ref": "https://nodeget.com/api/crontab/crud.html",
 
   "server_cron": {
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "crontab_create",
+    "_comment": "Default — pass mappings inline. Replace placeholder agent_uuid and domain. Add more entries to the mappings array for multiple agents / domains.",
     "params": {
       "token": "NODEGET_API_TOKEN",
       "name": "ddns-cf-sync",
       "cron_expression": "0 */5 * * * *",
       "cron_type": {
         "server": {
-          "js_worker": ["WORKER_NAME", {}]
+          "js_worker": ["WORKER_NAME", {
+            "mappings": [
+              {
+                "name": "home",
+                "agent_uuid": "00000000-0000-0000-0000-aaaaaaaaaaaa",
+                "record_v4": "home.example.com",
+                "family": "v4"
+              }
+            ]
+          }]
         }
       }
     }
@@ -20,58 +27,76 @@
 
   "_optional_daily_force": {
     "_comment": "Once a day, force re-push regardless of KV cache. Defends against silent edits on the Cloudflare dashboard.",
-    "jsonrpc": "2.0",
-    "id": 2,
-    "method": "crontab_create",
     "params": {
       "token": "NODEGET_API_TOKEN",
       "name": "ddns-cf-daily-force",
       "cron_expression": "0 0 3 * * *",
       "cron_type": {
         "server": {
-          "js_worker": ["WORKER_NAME", { "force": true }]
+          "js_worker": ["WORKER_NAME", {
+            "mappings": [
+              {
+                "name": "home",
+                "agent_uuid": "00000000-0000-0000-0000-aaaaaaaaaaaa",
+                "record_v4": "home.example.com",
+                "family": "v4"
+              }
+            ],
+            "force": true
+          }]
         }
       }
     }
   },
 
-  "_optional_per_mapping_schedule": {
-    "_comment": "Run a single mapping on a different cadence. Add a separate server cron with params.only.",
-    "jsonrpc": "2.0",
-    "id": 3,
-    "method": "crontab_create",
+  "_optional_multi_mapping": {
+    "_comment": "Multiple agents / domains under one cron. Each mapping has its own KV namespace (last_ip:<name>:<type>) so they don't interfere.",
     "params": {
       "token": "NODEGET_API_TOKEN",
-      "name": "ddns-cf-sync-nas",
-      "cron_expression": "0 */15 * * * *",
-      "cron_type": {
-        "server": {
-          "js_worker": ["WORKER_NAME", { "only": "nas" }]
-        }
-      }
-    }
-  },
-
-  "_optional_mappings_in_params": {
-    "_comment": "Pass MAPPINGS via cron params instead of env. Useful for multi-tenant or per-cron config groups. Never embed CF_API_TOKEN / NODEGET_API_TOKEN here — they belong in env only.",
-    "jsonrpc": "2.0",
-    "id": 4,
-    "method": "crontab_create",
-    "params": {
-      "token": "NODEGET_API_TOKEN",
-      "name": "ddns-cf-sync-tenant-a",
+      "name": "ddns-cf-sync-all",
       "cron_expression": "0 */5 * * * *",
       "cron_type": {
         "server": {
           "js_worker": ["WORKER_NAME", {
             "mappings": [
               {
-                "name": "tenant-a-home",
-                "agent_uuid": "00000000-0000-0000-0000-cccccccccccc",
-                "record_v4": "home-a.example.com",
+                "name": "home",
+                "agent_uuid": "00000000-0000-0000-0000-aaaaaaaaaaaa",
+                "record_v4": "home.example.com",
+                "record_v6": "home.example.com",
+                "family": "both"
+              },
+              {
+                "name": "nas",
+                "agent_uuid": "00000000-0000-0000-0000-bbbbbbbbbbbb",
+                "record_v4": "nas.example.com",
                 "family": "v4"
               }
             ]
+          }]
+        }
+      }
+    }
+  },
+
+  "_optional_per_mapping_schedule": {
+    "_comment": "Different cadence for one mapping. Use `only` to limit which mapping this cron runs.",
+    "params": {
+      "token": "NODEGET_API_TOKEN",
+      "name": "ddns-cf-sync-nas",
+      "cron_expression": "0 */15 * * * *",
+      "cron_type": {
+        "server": {
+          "js_worker": ["WORKER_NAME", {
+            "mappings": [
+              {
+                "name": "nas",
+                "agent_uuid": "00000000-0000-0000-0000-bbbbbbbbbbbb",
+                "record_v4": "nas.example.com",
+                "family": "v4"
+              }
+            ],
+            "only": "nas"
           }]
         }
       }
